@@ -73,14 +73,12 @@ const WorkflowContent = () => {
       // Set the source node and mark connection as started
       setSourceNodeId(nodeId);
       setIsConnectionStarted(true);
-      console.log('Connection started from node:', nodeId, 'handle:', handleId);
     }
   }, [setSourceNodeId, setIsConnectionStarted]);
 
   const onConnectEnd = useCallback((event: any) => {
     // Reset connection state when connection is cancelled
     resetConnection();
-    console.log('Connection ended');
   }, [resetConnection]);
 
   // Handle edge name confirmation
