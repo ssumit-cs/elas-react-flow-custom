@@ -2,16 +2,18 @@ import React, { useState } from "react";
 import {
   EdgeLabelRenderer,
   EdgeProps,
+  Position,
   useReactFlow,
 } from "reactflow";
 import { X } from "react-bootstrap-icons";
 
+
 // Configurable constants
 const OFFSET = 30;
-const MINIMUM_STEPS = 3;
-const MAXIMUM_STEPS = 5;
-const EDGE_START_OFFSET = 5; // Increase edge length from source
-const EDGE_END_OFFSET = 5;   // Increase edge length towards target
+const MINIMUM_STEPS = 4;
+const MAXIMUM_STEPS = 8;
+const EDGE_START_OFFSET = 3; // Increase edge length from source
+const EDGE_END_OFFSET = 3;   // Increase edge length towards target
 
 export default function CustomEdge(props: EdgeProps) {
   const {
@@ -24,6 +26,7 @@ export default function CustomEdge(props: EdgeProps) {
     targetPosition,
     label,
   } = props;
+
 
   // @ts-expect-error
   const targetHandle = props.targetHandle;
@@ -83,7 +86,11 @@ export default function CustomEdge(props: EdgeProps) {
   const edgeName = (label as string) || "Edge";
   const displayText = isHovered || edgeName.length <= 8 ? edgeName : `${edgeName.slice(0, 8)}...`;
 
+  console.log(sourcePosition, targetPosition, props);
+
+
   return (
+
     <>
       {/* Arrow markers */}
       <svg style={{ height: 0, width: 0 }}>
@@ -146,3 +153,5 @@ export default function CustomEdge(props: EdgeProps) {
     </>
   );
 }
+
+

@@ -5,11 +5,10 @@ import {
   Image,
   Text,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { X } from "react-bootstrap-icons";
 import {
   NodeProps,
-  Position,
   useReactFlow,
 } from "reactflow";
 import CustomHandle from "./CustomHandle";

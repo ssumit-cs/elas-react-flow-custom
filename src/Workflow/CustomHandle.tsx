@@ -1,5 +1,4 @@
-import React from "react";
-import { Handle, HandleProps, Position } from "reactflow";
+import { Handle, Position } from "reactflow";
 import { useConnectionContext } from "./ConnectionContext";
 
 interface GenerateHandlersProps {
@@ -21,9 +20,9 @@ function generateHandlers({
   isVertical,
   totalHeight,
   totalWidth,
-  verticalHandleSize = 10,
-  horizontalHandleSize = 10,
-  verticalHeight = 50,
+  verticalHandleSize = 5,
+  horizontalHandleSize = 5,
+  verticalHeight = 60,
   nodeId,
   isHovered = false,
 }: GenerateHandlersProps) {
@@ -46,50 +45,58 @@ function generateHandlers({
   // For left and right positions, skip the last handle
   const totalHandles = isVertical ? (count * 2) - 1 : count * 2;
 
-  for (let i = 0; i < totalHandles; i++) {
-    const index = Math.floor(i / 2) + 1;
+  for (let i = 1; i < totalHandles; i++) {
+    // const index = Math.floor(i / 2) + 1;
+    const index = i;
     const isTarget = i % 2 === 0; // Even indices are targets, odd are sources
     let top, left, width, height;
+    if (i === totalHandles - 1) {
+      continue;
+    }
 
     if (isVertical) {
       // For left and right handles (vertical) - alternating target/source
       const segmentHeight = verticalHeight / (count * 2); // Use constrained height
       const startTop = (totalHeight - verticalHeight) / 2; // Center the handlers
-      top = startTop + (segmentHeight * i) - 5;
-      left = position === Position.Left ? -1 : totalWidth - verticalHandleSize - 10;
+      top = startTop + (segmentHeight * i);
+      left = position === Position.Left ? 0 : totalWidth - verticalHandleSize - 10;
       width = verticalHandleSize + 10;
-      height = verticalHandleSize * 2;
+      height = verticalHandleSize * 2 - 2;
     } else {
       // For top and bottom handles (horizontal) - alternating target/source
       const segmentWidth = totalWidth / (count * 2);
-      top = position === Position.Top ? -3 : totalHeight / 2 - 5;
+      top = position === Position.Top ? 1 : totalHeight / 2 - 5;
       left = segmentWidth * i + 10 > totalWidth ? totalWidth - horizontalHandleSize : segmentWidth * i;
       width = horizontalHandleSize * 2;
       height = horizontalHandleSize + 10;
+      if (i === totalHandles - 1) {
+        left -= 4;
+        width += 5;
+      }
     }
 
     // Determine if this handle should be visible
     const shouldShow = isTarget ? shouldShowTargetHandles : shouldShowSourceHandles;
-
     // Always render the handle but control visibility with opacity and pointer events
     handlers.push(
       <Handle
-        key={`${position}-${isTarget ? 'target' : 'source'}-${index}-${i % 2}`}
+        key={`${position}-${isTarget ? 'target' : 'source'}-${index}`}
         type={isTarget ? 'target' : 'source'}
         position={position}
-        id={`${position}-${isTarget ? 'target' : 'source'}-${index}-${i % 2}`}
+        id={`${position}-${isTarget ? 'target' : 'source'}-${index}`}
         style={{
           position: "absolute",
           top: `${top}px`,
           left: `${left}px`,
           width: `${width}px`,
           height: `${height}px`,
-          background: "transparent", // Invisible background
+          // background: "transparent", // Invisible background
+          background: isTarget ? targetColor : sourceColor, // Invisible background
           border: "none", // No border
           borderRadius: "50%", // Make it circular
           zIndex: 100,
           pointerEvents: shouldShow ? "auto" : "none", // Control interactivity
-          opacity: shouldShow ? 0 : 0, // Completely invisible
+          // opacity: shouldShow ? 0 : 0, // Completely invisible
           transition: "opacity 0.2s ease-in-out", // Smooth transitions
         }}
         isConnectable={shouldShow} // Control connectability
@@ -113,7 +120,7 @@ export default function CustomHandle(props: CustomHandleProps) {
   return (
     <>
       {generateHandlers({
-        count: 3,
+        count: 4,
         position: Position.Left,
         isVertical: true,
         totalHeight,
@@ -126,7 +133,7 @@ export default function CustomHandle(props: CustomHandleProps) {
       {/* Generate Right Handlers - 3 pairs of target/source handlers */}
       {
         generateHandlers({
-          count: 3,
+          count: 4,
           position: Position.Right,
           isVertical: true,
           totalHeight,

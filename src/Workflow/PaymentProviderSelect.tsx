@@ -19,7 +19,7 @@ export default function PaymentProviderSelect() {
     setNodes((prevNodes) => [
       ...prevNodes,
       {
-        id: `${prevNodes.length + 1}`,
+        id: Date.now().toString(),
         data: { name, code },
         type: "paymentProvider",
         position: { x: location, y: location },
