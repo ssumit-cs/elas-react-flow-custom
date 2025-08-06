@@ -10,8 +10,8 @@ interface GenerateHandlersProps {
   verticalHandleSize?: number;
   horizontalHandleSize?: number;
   verticalHeight?: number;
-  nodeId: string; // Add nodeId to identify the current node
-  isHovered?: boolean; // Add hover state
+  nodeId: string;
+  isHovered?: boolean;
 }
 
 function generateHandlers({
@@ -22,86 +22,150 @@ function generateHandlers({
   totalWidth,
   verticalHandleSize = 5,
   horizontalHandleSize = 5,
-  verticalHeight = 60,
   nodeId,
   isHovered = false,
 }: GenerateHandlersProps) {
   const handlers = [];
   const { sourceNodeId, isConnectionStarted } = useConnectionContext();
 
-  // Different colors for target and source - made more visible for testing
-  const targetColor = "rgba(255, 0, 0, 0.8)"; // Red for target (highly visible)
-  const sourceColor = "rgba(0, 255, 0, 0.8)"; // Green for source (highly visible)
+  // Colors for target and source handles
+  const targetColor = "rgba(255, 0, 0, 0.8)"; // Red for target
+  const sourceColor = "rgba(0, 255, 0, 0.8)"; // Green for source
 
   // Determine which handles to show based on connection state and hover
   const isSourceNode = sourceNodeId === nodeId;
 
-  // Override hover effect when connection is in progress
-  const effectiveHover = isConnectionStarted ? false : isHovered;
+  // Source handles: visible only on hover when no connection is in progress
+  const shouldShowSourceHandles = isHovered && !isConnectionStarted;
 
-  const shouldShowSourceHandles = !isConnectionStarted || isSourceNode || effectiveHover;
+  // Target handles: visible when connection is in progress and this is NOT the source node
   const shouldShowTargetHandles = isConnectionStarted && !isSourceNode;
 
-  // For left and right positions, skip the last handle
-  const totalHandles = isVertical ? (count * 2) - 1 : count * 2;
+  // Generate handle positions
+  if (isVertical) {
+    // For vertical positions (left/right), create only one handle in the middle with double height
+    const top = (totalHeight / 2) - verticalHandleSize * 2 - 2;
+    const left = position === Position.Left ? 0 : totalWidth - verticalHandleSize - 10;
+    const width = verticalHandleSize + 10;
+    const height = (verticalHandleSize * 2) + 10; // Double height
 
-  for (let i = 1; i < totalHandles; i++) {
-    // const index = Math.floor(i / 2) + 1;
-    const index = i;
-    const isTarget = i % 2 === 0; // Even indices are targets, odd are sources
-    let top, left, width, height;
-    if (i === totalHandles - 1) {
-      continue;
-    }
-
-    if (isVertical) {
-      // For left and right handles (vertical) - alternating target/source
-      const segmentHeight = verticalHeight / (count * 2); // Use constrained height
-      const startTop = (totalHeight - verticalHeight) / 2; // Center the handlers
-      top = startTop + (segmentHeight * i);
-      left = position === Position.Left ? 0 : totalWidth - verticalHandleSize - 10;
-      width = verticalHandleSize + 10;
-      height = verticalHandleSize * 2 - 2;
-    } else {
-      // For top and bottom handles (horizontal) - alternating target/source
-      const segmentWidth = totalWidth / (count * 2);
-      top = position === Position.Top ? 1 : totalHeight / 2 - 5;
-      left = segmentWidth * i + 10 > totalWidth ? totalWidth - horizontalHandleSize : segmentWidth * i;
-      width = horizontalHandleSize * 2;
-      height = horizontalHandleSize + 10;
-      if (i === totalHandles - 1) {
-        left -= 4;
-        width += 5;
-      }
-    }
-
-    // Determine if this handle should be visible
-    const shouldShow = isTarget ? shouldShowTargetHandles : shouldShowSourceHandles;
-    // Always render the handle but control visibility with opacity and pointer events
+    // Create source handle
     handlers.push(
       <Handle
-        key={`${position}-${isTarget ? 'target' : 'source'}-${index}`}
-        type={isTarget ? 'target' : 'source'}
+        key={`${position}-source-middle`}
+        type="source"
         position={position}
-        id={`${position}-${isTarget ? 'target' : 'source'}-${index}`}
+        id={`${position}-source-middle`}
         style={{
           position: "absolute",
           top: `${top}px`,
           left: `${left}px`,
           width: `${width}px`,
           height: `${height}px`,
-          // background: "transparent", // Invisible background
-          background: isTarget ? targetColor : sourceColor, // Invisible background
-          border: "none", // No border
-          borderRadius: "50%", // Make it circular
-          zIndex: 100,
-          pointerEvents: shouldShow ? "auto" : "none", // Control interactivity
-          // opacity: shouldShow ? 0 : 0, // Completely invisible
-          transition: "opacity 0.2s ease-in-out", // Smooth transitions
+          background: sourceColor,
+          border: "none",
+          borderRadius: "0%",
+          zIndex: 101, // Higher z-index for source handles
+          pointerEvents: shouldShowSourceHandles ? "auto" : "none",
+          opacity: shouldShowSourceHandles ? 1 : 0,
+          transition: "opacity 0.2s ease-in-out",
         }}
-        isConnectable={shouldShow} // Control connectability
+        isConnectable={shouldShowSourceHandles}
       />
     );
+
+    // Create target handle at the same position
+    handlers.push(
+      <Handle
+        key={`${position}-target-middle`}
+        type="target"
+        position={position}
+        id={`${position}-target-middle`}
+        style={{
+          position: "absolute",
+          top: `${top}px`,
+          left: `${left}px`,
+          width: `${width}px`,
+          height: `${height}px`,
+          background: targetColor,
+          border: "none",
+          borderRadius: "0%",
+          zIndex: 100, // Lower z-index for target handles
+          pointerEvents: shouldShowTargetHandles ? "auto" : "none",
+          opacity: shouldShowTargetHandles ? 1 : 0,
+          transition: "opacity 0.2s ease-in-out",
+        }}
+        isConnectable={shouldShowTargetHandles}
+      />
+    );
+  } else {
+    // For horizontal positions (top/bottom), keep the existing multiple handles logic
+    for (let i = 0; i < count; i++) {
+      if (i === 0) {
+        continue;
+      }
+      // For top and bottom handles (horizontal)
+      const segmentWidth = totalWidth / count;
+      const top = position === Position.Top ? 0 : totalHeight / 2 - 5;
+      let left = (segmentWidth * i) + (segmentWidth / 2) - (horizontalHandleSize);
+      let width = horizontalHandleSize + 10;
+      const height = horizontalHandleSize + 10;
+
+      if (i === count - 1) {
+        width -= 5;
+        left -= 5;
+      }
+
+      // Create source handle
+      handlers.push(
+        <Handle
+          key={`${position}-source-${i}`}
+          type="source"
+          position={position}
+          id={`${position}-source-${i}`}
+          style={{
+            position: "absolute",
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            background: sourceColor,
+            border: "none",
+            borderRadius: "0%",
+            zIndex: 101, // Higher z-index for source handles
+            pointerEvents: shouldShowSourceHandles ? "auto" : "none",
+            opacity: shouldShowSourceHandles ? 1 : 0,
+            transition: "opacity 0.2s ease-in-out",
+          }}
+          isConnectable={shouldShowSourceHandles}
+        />
+      );
+
+      // Create target handle at the same position
+      handlers.push(
+        <Handle
+          key={`${position}-target-${i}`}
+          type="target"
+          position={position}
+          id={`${position}-target-${i}`}
+          style={{
+            position: "absolute",
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            background: targetColor,
+            border: "none",
+            borderRadius: "0%",
+            zIndex: 100, // Lower z-index for target handles
+            pointerEvents: shouldShowTargetHandles ? "auto" : "none",
+            opacity: shouldShowTargetHandles ? 1 : 0,
+            transition: "opacity 0.2s ease-in-out",
+          }}
+          isConnectable={shouldShowTargetHandles}
+        />
+      );
+    }
   }
 
   return handlers;
